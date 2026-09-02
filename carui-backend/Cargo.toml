@@ -1,0 +1,58 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/carui-common",
+    "crates/carui-gateway",
+    "crates/carui-speed",
+    "crates/carui-cameras",
+    "crates/carui-gpio",
+    "crates/mock-arsenal",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["CarUI Team"]
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+
+axum = { version = "0.7", features = ["ws"] }
+tower-http = { version = "0.5", features = ["cors", "fs"] }
+
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+rstar = "0.12"
+petgraph = "0.6"
+
+nmea-parser = "0.11"
+tokio-serial = "5.4"
+geo = "0.26"
+
+gpiod = "0.3"
+
+rppal = "0.19"
+
+v4l = "0.14"
+
+futures-util = "0.3"
+dashmap = "6"
+async-stream = "0.3"
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+anyhow = "1"
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+parking_lot = "0.12"
+
+carui-common = { path = "crates/carui-common" }

@@ -1,0 +1,31 @@
+[package]
+name = "carui-speed"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "carui-speed"
+path = "src/main.rs"
+
+[dependencies]
+carui-common.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower-http.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+futures-util.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+parking_lot.workspace = true
+dashmap.workspace = true
+
+rusqlite.workspace = true
+
+rstar.workspace = true
+
+nmea-parser.workspace = true
+tokio-serial.workspace = true

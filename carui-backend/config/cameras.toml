@@ -1,0 +1,39 @@
+
+listen_addr = "0.0.0.0:8083"
+recordings_path = "./data/recordings"
+max_storage_gb = 32
+auto_record = true
+output_fps = 10
+
+
+[[cameras]]
+id = "front"
+device = "/dev/video10"
+width = 1280
+height = 720
+fps = 15
+grid_index = 0
+
+[[cameras]]
+id = "rear"
+device = "/dev/video11"
+width = 1280
+height = 720
+fps = 15
+grid_index = 1
+
+[[cameras]]
+id = "left"
+device = "/dev/video12"
+width = 1280
+height = 720
+fps = 15
+grid_index = 2
+
+[[cameras]]
+id = "right"
+device = "/dev/video13"
+width = 1280
+height = 720
+fps = 15
+grid_index = 3

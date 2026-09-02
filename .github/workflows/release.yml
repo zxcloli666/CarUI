@@ -1,0 +1,229 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: "patch"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    if: contains(github.event.head_commit.message, '!release') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump version
+        id: bump
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VERSION_INPUT: ${{ github.event.inputs.version_type }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            RELEASE_TYPE="${VERSION_INPUT:-patch}"
+          else
+            RELEASE_TYPE=$(echo "$COMMIT_MSG" | grep -oP '!release:\s*\K(major|minor|patch)' || echo "patch")
+          fi
+
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+          LAST_TAG=$(git tag --sort=-v:refname | head -n1)
+          CURRENT_VERSION=${LAST_TAG#v}
+          CURRENT_VERSION=${CURRENT_VERSION:-0.0.0}
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          case "$RELEASE_TYPE" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          echo "Last release: $CURRENT_VERSION ($RELEASE_TYPE) -> $NEW_VERSION"
+
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+          if ! git diff --quiet; then
+            git commit -am "chore: bump version to v$NEW_VERSION [skip ci]"
+            git push origin HEAD:master
+          fi
+
+  build-backend:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ARM64 cross toolchain and system libs
+        run: |
+          sudo dpkg --add-architecture arm64 && sudo apt-get update
+          sudo apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            libgpiod-dev:arm64 \
+            libv4l-dev:arm64 \
+            libssl-dev:arm64 \
+            pkg-config
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: carui-backend -> target
+          key: backend-aarch64
+
+      - name: Build backend for ARM64
+        working-directory: carui-backend
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          PKG_CONFIG_ALLOW_CROSS: 1
+          PKG_CONFIG_LIBDIR: /usr/lib/aarch64-linux-gnu/pkgconfig
+        run: |
+          cargo build --release --target aarch64-unknown-linux-gnu
+
+      - name: Package backend binaries
+        run: |
+          mkdir -p /tmp/package/carui-backend-aarch64/config
+          cp carui-backend/target/aarch64-unknown-linux-gnu/release/ \
+            {carui-gateway,carui-speed,carui-cameras,carui-gpio,mock-arsenal} \
+            /tmp/package/carui-backend-aarch64/
+          cp carui-backend/config/*.toml /tmp/package/carui-backend-aarch64/config/
+          cd /tmp/package
+          tar -czf carui-backend-aarch64.tar.gz carui-backend-aarch64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-aarch64
+          path: /tmp/package/carui-backend-aarch64.tar.gz
+          retention-days: 1
+
+  build-frontend:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: carui-frontend/android -> target
+          key: frontend-android
+
+      - name: Write .env from secrets
+        run: |
+          cat > carui-frontend/.env <<EOF
+          GATEWAY_HOST=${{ secrets.GATEWAY_HOST }}
+          GATEWAY_PORT=${{ secrets.GATEWAY_PORT }}
+          MAPBOX_TOKEN=${{ secrets.MAPBOX_TOKEN }}
+          EOF
+
+      - name: Install frontend dependencies
+        working-directory: carui-frontend
+        run: npm install
+
+      - name: Build APK + AAB
+        working-directory: carui-frontend/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Stage artifacts
+        run: |
+          mkdir -p /tmp/package
+          cp carui-frontend/android/app/build/outputs/apk/release/*.apk /tmp/package/
+          cp carui-frontend/android/app/build/outputs/bundle/release/*.aab /tmp/package/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-android
+          path: |
+            /tmp/package/*.apk
+            /tmp/package/*.aab
+          retention-days: 1
+
+  release:
+    needs: [version, build-backend, build-frontend]
+    if: always() && needs.build-backend.result == 'success' && needs.build-frontend.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la /tmp/artifacts/
+
+      - name: Create git tag
+        id: tag
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: CarUI v${{ needs.version.outputs.version }}
+          body: |
+            ## CarUI v${{ needs.version.outputs.version }}
+
+            ### Ассеты
+            - `carui-backend-aarch64.tar.gz` — backend-сервисы для Raspberry Pi (ARM64)
+            - `*.apk` — Android APK
+            - `*.aab` — Android App Bundle
+
+            ### Бэкенд (crates)
+            - `carui-gateway` — API Gateway, WebSocket Hub (:8080)
+            - `carui-speed` — Ограничения скорости (:8082)
+            - `carui-cameras` — Камеры, запись (:8083)
+            - `carui-gpio` — GPIO (двери, парктроник) (:8084)
+            - `mock-arsenal` — Эмуляция оборудования (:9090)
+          files: /tmp/artifacts/*
+          fail_on_unmatched_files: false
+          generate_release_notes: true

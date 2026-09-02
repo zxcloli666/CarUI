@@ -1,0 +1,7 @@
+
+listen_addr = "0.0.0.0:8080"
+
+[services]
+speed = "http://localhost:8082"
+cameras = "http://localhost:8083"
+gpio = "http://localhost:8084"

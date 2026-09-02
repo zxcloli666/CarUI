@@ -1,0 +1,67 @@
+
+listen_addr = "0.0.0.0:8084"
+
+gpio_chip = "gpiochip0"
+
+[doors]
+front_left = 17
+front_right = 27
+rear_left = 22
+rear_right = 23
+
+[reverse]
+signal = 24
+
+[parking]
+port = "/tmp/mock-parking"
+baud_rate = 9600
+poll_interval_ms = 100
+
+
+[[parking.sensors]]
+position = "rear_left"
+uart_index = 0
+
+[[parking.sensors]]
+position = "rear_center_left"
+uart_index = 1
+
+[[parking.sensors]]
+position = "rear_center_right"
+uart_index = 2
+
+[[parking.sensors]]
+position = "rear_right"
+uart_index = 3
+
+[[parking.sensors]]
+position = "front_left"
+uart_index = 4
+
+[[parking.sensors]]
+position = "front_center_left"
+uart_index = 5
+
+[[parking.sensors]]
+position = "front_center_right"
+uart_index = 6
+
+[[parking.sensors]]
+position = "front_right"
+uart_index = 7
+
+[[parking.sensors]]
+position = "left_front"
+uart_index = 8
+
+[[parking.sensors]]
+position = "left_rear"
+uart_index = 9
+
+[[parking.sensors]]
+position = "right_front"
+uart_index = 10
+
+[[parking.sensors]]
+position = "right_rear"
+uart_index = 11
