@@ -103,7 +103,7 @@ jobs:
         run: |
           mkdir -p /tmp/package/carui-backend-aarch64/config
           cp carui-backend/target/aarch64-unknown-linux-gnu/release/ \
-            {carui-gateway,carui-speed,carui-cameras,carui-gpio,mock-arsenal} \
+            {carui-gateway,carui-cameras,carui-gpio,mock-arsenal} \
             /tmp/package/carui-backend-aarch64/
           cp carui-backend/config/*.toml /tmp/package/carui-backend-aarch64/config/
           cd /tmp/package
@@ -149,6 +149,7 @@ jobs:
           GATEWAY_HOST=${{ secrets.GATEWAY_HOST }}
           GATEWAY_PORT=${{ secrets.GATEWAY_PORT }}
           MAPBOX_TOKEN=${{ secrets.MAPBOX_TOKEN }}
+          OVERPASS_URL=${{ secrets.OVERPASS_URL }}
           EOF
 
       - name: Install frontend dependencies
@@ -225,7 +226,6 @@ jobs:
 
             ### Бэкенд (crates)
             - `carui-gateway` — API Gateway, WebSocket Hub (:8080)
-            - `carui-speed` — Ограничения скорости (:8082)
             - `carui-cameras` — Камеры, запись (:8083)
             - `carui-gpio` — GPIO (двери, парктроник) (:8084)
             - `mock-arsenal` — Эмуляция оборудования (:9090)
