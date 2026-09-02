@@ -1,6 +1,0 @@
-
-listen_addr = "0.0.0.0:8082"
-db_path = "./data/speed.db"
-gps_port = "/tmp/mock-gps"
-tile_ttl_days = 7
-overpass_url = "https://maps.mail.ru/osm/tools/overpass/api/interpreter"

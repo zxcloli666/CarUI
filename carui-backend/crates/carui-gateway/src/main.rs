@@ -9,7 +9,6 @@ use axum::{
     routing::{any, get},
     Router,
 };
-use tokio::sync::broadcast;
 use tower_http::cors::CorsLayer;
 
 mod config;
@@ -24,8 +23,6 @@ pub struct AppState {
     pub config: Config,
     pub hub: Hub,
     pub http_client: reqwest::Client,
-    
-    pub position_tx: broadcast::Sender<String>,
 }
 
 #[tokio::main]
@@ -38,13 +35,11 @@ async fn main() -> anyhow::Result<()> {
 
     let hub = Hub::new();
     let http_client = reqwest::Client::new();
-    let (position_tx, _) = broadcast::channel(256);
 
     let state = Arc::new(AppState {
         config: config.clone(),
         hub,
         http_client,
-        position_tx,
     });
 
     
@@ -60,7 +55,6 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         
         .route("/api/gpio/*path", any(proxy::gpio))
-        .route("/api/speed/*path", any(proxy::speed))
         .route("/api/cameras/*path", any(proxy::cameras))
         .layer(CorsLayer::permissive())
         .with_state(state);

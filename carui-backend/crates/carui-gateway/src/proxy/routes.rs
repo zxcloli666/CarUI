@@ -113,16 +113,6 @@ pub async fn gpio(
     proxy_request(&state, &state.config.services.gpio, &full_url, req).await
 }
 
-pub async fn speed(
-    State(state): State<Arc<AppState>>,
-    Path(path): Path<String>,
-    Query(query): Query<HashMap<String, String>>,
-    req: Request<Body>,
-) -> Response {
-    let full_url = convert_url(path, query);
-    proxy_request(&state, &state.config.services.speed, &full_url, req).await
-}
-
 pub async fn cameras(
     State(state): State<Arc<AppState>>,
     Path(path): Path<String>,

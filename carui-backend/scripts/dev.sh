@@ -66,10 +66,6 @@ CONFIG_PATH=./config/gpio-dev.toml cargo run --bin carui-gpio --release &
 GPIO_PID=$!
 echo -e "  ${GREEN}✓${NC} GPIO service (PID: $GPIO_PID)"
 
-CONFIG_PATH=./config/speed.toml cargo run --bin carui-speed --release &
-SPEED_PID=$!
-echo -e "  ${GREEN}✓${NC} Speed service (PID: $SPEED_PID)"
-
 CONFIG_PATH=./config/cameras.toml cargo run --bin carui-cameras --release &
 CAMERAS_PID=$!
 echo -e "  ${GREEN}✓${NC} Cameras service (PID: $CAMERAS_PID)"
@@ -87,7 +83,6 @@ echo -e "${CYAN}═════════════════════�
 echo -e "  Gateway:       ${CYAN}http://localhost:8080${NC}"
 echo -e "  Mock Arsenal:  ${CYAN}http://localhost:9090${NC}"
 echo -e "  GPIO:          http://localhost:8084"
-echo -e "  Speed:         http://localhost:8082"
 echo -e "  Cameras:       http://localhost:8083"
 echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
 echo
@@ -96,7 +91,7 @@ echo -e "Press ${RED}Ctrl+C${NC} to stop all services"
 cleanup() {
     echo
     echo -e "${YELLOW}Stopping all services...${NC}"
-    kill $MOCK_PID $GPIO_PID $SPEED_PID $CAMERAS_PID $GATEWAY_PID 2>/dev/null || true
+    kill $MOCK_PID $GPIO_PID $CAMERAS_PID $GATEWAY_PID 2>/dev/null || true
     echo -e "${GREEN}Done${NC}"
     exit 0
 }

@@ -2,14 +2,13 @@ import { useEffect, useRef } from 'react';
 import { gatewayService } from '../services';
 import { fetchWeather } from '../services/WeatherService';
 import { useCarStore, useConnectionStore } from '../app/store';
-import { WsEvent, DoorState, Position, SpeedLimit } from '../types';
+import type { WsEvent, DoorState, Position } from '../types';
 
 const GPS_THROTTLE_MS = 150; // ~6 updates/sec
 
 export function useGateway() {
   // Store actions
   const setPosition = useCarStore((s) => s.setPosition);
-  const setSpeedLimit = useCarStore((s) => s.setSpeedLimit);
   const setDoors = useCarStore((s) => s.setDoors);
   const setReverse = useCarStore((s) => s.setReverse);
   const setParkingSensors = useCarStore((s) => s.setParkingSensors);
@@ -51,8 +50,6 @@ export function useGateway() {
               // Сайд-эффект: погода (лучше вынести в отдельный listener в useLocation, но ок)
               fetchWeather(position.lat, position.lon).catch(() => {});
             }
-          } else if (evtType === 'speed_limit') {
-            setSpeedLimit(data as SpeedLimit);
           }
           break;
 

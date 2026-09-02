@@ -9,6 +9,7 @@ import {
   useAudioEvents,
   useLauncherMode,
   useLocation,
+  useSpeedEngine,
 } from '../hooks';
 import { useSettingsStore } from './store';
 import { colors } from '../theme';
@@ -28,7 +29,9 @@ function AppContent() {
   // Initialize audio event handling
   useAudioEvents();
 
+  // Initialize GPS + local speed engine (standalone, no backend needed)
   useLocation();
+  useSpeedEngine();
 
   // Load settings on startup
   const loadSettings = useSettingsStore((s) => s.loadSettings);

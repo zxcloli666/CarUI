@@ -6,3 +6,4 @@ export { useLauncherMode } from './useLauncherMode';
 export { useAudioEvents } from './useAudioEvents';
 export { useTheme, useAccentColor } from './useTheme';
 export { useScreenActive } from './useScreenActive';
+export { useSpeedEngine } from './useSpeedEngine';

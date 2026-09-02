@@ -139,7 +139,6 @@ async fn main() -> anyhow::Result<()> {
     if let Some(pty_path) = gps.get_pty_path() {
         tracing::info!("===========================================");
         tracing::info!("GPS PTY available at: {}", pty_path.display());
-        tracing::info!("Configure carui-speed: gps_port = \"{}\"", pty_path.display());
         tracing::info!("===========================================");
     }
 

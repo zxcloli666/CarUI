@@ -23,7 +23,6 @@ enum ClientMessage {
     Subscribe { topics: Vec<String> },
     Unsubscribe { topics: Vec<String> },
     Ping,
-    Position { lat: f64, lon: f64, bearing: f32, speed_kmh: f32 },
 }
 
 pub async fn handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> Response {
@@ -71,17 +70,6 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                         }
                         ClientMessage::Ping => {
                             
-                        }
-                        ClientMessage::Position { lat, lon, bearing, speed_kmh } => {
-                            
-                            let pos_msg = serde_json::json!({
-                                "type": "position",
-                                "lat": lat,
-                                "lon": lon,
-                                "bearing": bearing,
-                                "speed_kmh": speed_kmh
-                            });
-                            let _ = state.position_tx.send(pos_msg.to_string());
                         }
                     }
                 }

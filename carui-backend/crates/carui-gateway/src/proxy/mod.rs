@@ -2,4 +2,4 @@
 
 mod routes;
 
-pub use routes::{cameras, gpio, speed};
+pub use routes::{cameras, gpio};
