@@ -86,7 +86,7 @@ jobs:
       - name: Install cross
         working-directory: carui-backend
         run: |
-          cargo install cross
+          cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
