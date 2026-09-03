@@ -111,10 +111,16 @@ android {
             manifestPlaceholders = [usesCleartextTraffic: "true"]
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            // ВАЖНО: НЕ вырезать "неиспользуемые" raw-ресурсы. Аудио-паки грузятся
+            // динамически через getIdentifier (react-native-sound), AGP этого не видит
+            // и без этих флагов случайно теряет часть .ogg (озвучка "дырявая", TTS вместо файла).
+            shrinkResources false
         }
     }
     aaptOptions {
         noCompress "mp3"
+        // .ogg тоже не сжимаем и не трогаем — чтоб не путать AGP при оптимизации ресурсов.
+        noCompress "ogg"
     }
 }
 
