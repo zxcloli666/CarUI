@@ -102,8 +102,7 @@ jobs:
       - name: Package backend binaries
         run: |
           mkdir -p /tmp/package/carui-backend-aarch64/config
-          cp carui-backend/target/aarch64-unknown-linux-gnu/release/ \
-            {carui-gateway,carui-cameras,carui-gpio,mock-arsenal} \
+          cp carui-backend/target/aarch64-unknown-linux-gnu/release/{carui-gateway,carui-cameras,carui-gpio,mock-arsenal} \
             /tmp/package/carui-backend-aarch64/
           cp carui-backend/config/*.toml /tmp/package/carui-backend-aarch64/config/
           cd /tmp/package
