@@ -292,6 +292,7 @@ function useConnectionEvents() {
   const audioService = getAudioService();
   const status = useConnectionStore((s) => s.status); // Primitive string
   const prevStatus = useRef(status);
+  const reconnectAnnounced = useRef(false);
 
   useEffect(() => {
     if (status === prevStatus.current) return;
@@ -304,6 +305,7 @@ function useConnectionEvents() {
     // 1. Успешное подключение (из любого состояния)
     if (current === 'connected') {
       safePlay(audioService.playConnected());
+      reconnectAnnounced.current = false; // сбрасываем, чтобы при следующем разрыве снова озвучить
     }
 
     // 2. Потеря связи (ТОЛЬКО если мы были подключены)
@@ -312,11 +314,15 @@ function useConnectionEvents() {
       safePlay(audioService.playDisconnected());
     }
 
-    // 3. Попытка переподключения (ТОЛЬКО после разрыва)
+    // 3. Попытка переподключения (ТОЛЬКО после разрыва, и ОДИН раз за шторм)
     // initial -> connecting: МОЛЧИМ (это старт приложения)
-    // disconnected -> connecting: ИГРАЕМ (это попытка восстановить связь)
+    // disconnected -> connecting: ИГРАЕМ один раз, чтобы не орать каждые n секунд,
+    // даже если бэкенд недоступен и оффлайн сохраняется
     else if (current === 'connecting' && prev === 'disconnected') {
-      safePlay(audioService.playReconnecting());
+      if (!reconnectAnnounced.current) {
+        safePlay(audioService.playReconnecting());
+        reconnectAnnounced.current = true;
+      }
     }
 
     // Обновляем реф
