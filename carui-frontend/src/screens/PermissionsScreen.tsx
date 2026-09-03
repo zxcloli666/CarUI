@@ -130,11 +130,10 @@ export function PermissionsScreen() {
 
     setStatus(nextStatus);
     setStatusLoaded(true);
-    const missingRequired = getRequiredKeys(requiresNotificationPermission).some((key) => !nextStatus[key]);
-    if (!isForceOpen && setupLoaded && setupCompleted && !missingRequired) {
+    if (!isForceOpen && setupLoaded && setupCompleted) {
       closePermissions();
     }
-  }, [closePermissions, isForceOpen, requiresNotificationPermission, setupCompleted, setupLoaded]);
+  }, [closePermissions, isForceOpen, setupCompleted, setupLoaded]);
 
   useEffect(() => {
     let mounted = true;
@@ -260,7 +259,7 @@ export function PermissionsScreen() {
   const grantedCount = [...requiredKeys, ...recommendedKeys].filter((key) => status[key]).length;
   const progress = totalCount === 0 ? 0 : grantedCount / totalCount;
 
-  const autoVisible = setupLoaded && statusLoaded && (!setupCompleted || missingRequired);
+  const autoVisible = setupLoaded && statusLoaded && !setupCompleted;
   const visible = isForceOpen || autoVisible;
 
   useEffect(() => {
@@ -276,16 +275,19 @@ export function PermissionsScreen() {
   }, [missingRequired, refreshStatus, setupCompleted, setupLoaded, status.keepAlive]);
 
   const handleContinue = useCallback(async () => {
-    if (missingRequired) return;
     await AsyncStorage.setItem(PERMISSIONS_SETUP_KEY, 'true');
     setSetupCompleted(true);
     closePermissions();
-  }, [closePermissions, missingRequired]);
+  }, [closePermissions]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback(async () => {
     if (isForceOpen) {
       closePermissions();
+      return;
     }
+    await AsyncStorage.setItem(PERMISSIONS_SETUP_KEY, 'true');
+    setSetupCompleted(true);
+    closePermissions();
   }, [closePermissions, isForceOpen]);
 
   const specialSteps = useMemo(
@@ -450,17 +452,15 @@ export function PermissionsScreen() {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
-            {isForceOpen ? (
-              <View style={styles.closeRow}>
-                <Button
-                  title="Закрыть"
-                  onPress={handleClose}
-                  variant="ghost"
-                  size="sm"
-                  icon={<X size={16} color={BASE_COLORS.text.secondary} />}
-                />
-              </View>
-            ) : null}
+            <View style={styles.closeRow}>
+              <Button
+                title="Закрыть"
+                onPress={handleClose}
+                variant="ghost"
+                size="sm"
+                icon={<X size={16} color={BASE_COLORS.text.secondary} />}
+              />
+            </View>
             <Text style={styles.eyebrow}>CARUI SETUP</Text>
             <Text style={styles.title}>Разрешения и фон</Text>
             <Text style={styles.subtitle}>
@@ -532,19 +532,14 @@ export function PermissionsScreen() {
 
           <View style={styles.footer}>
             <Button
-              title={missingRequired ? 'Завершить после разрешений' : 'Продолжить в CarUI'}
+              title="Продолжить в CarUI"
               onPress={handleContinue}
-              disabled={missingRequired}
               variant="secondary"
               size="lg"
             />
-            {missingRequired ? (
+            {missingRequired || missingRecommended ? (
               <Text style={styles.footerHint}>
-                Разрешите все основные доступы, чтобы продолжить.
-              </Text>
-            ) : missingRecommended ? (
-              <Text style={styles.footerHint}>
-                Рекомендуемые доступы можно включить позже в настройках.
+                Пропущенные доступы можно включить позже в настройках.
               </Text>
             ) : null}
           </View>
@@ -595,7 +590,7 @@ function PermissionCard({
 }: PermissionCardProps) {
   const accent = useAccentColor();
   const statusColor = granted ? BASE_COLORS.semantic.success : required ? BASE_COLORS.semantic.warning : BASE_COLORS.text.tertiary;
-  const statusLabel = granted ? 'Готово' : required ? 'Требуется' : 'Советуем';
+  const statusLabel = granted ? 'Готово' : required ? 'Основной' : 'Советуем';
 
   return (
     <View style={[styles.card, style]}>
